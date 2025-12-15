@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import liff from '@line/liff'
 import NurseLogo from '../assets/Nurse.png'
 
 const WEBHOOK_URL = 'https://n8n.srv1159869.hstgr.cloud/webhook/review-submit'
+const LIFF_ID = '2008692184-BtsHKjM8'
 
 interface FeatureOption {
     code: string
@@ -23,12 +25,43 @@ const FEATURES: FeatureOption[] = [
 export default function ReviewForm() {
     const navigate = useNavigate()
 
+    const [userId, setUserId] = useState<string>('anonymous')
+    const [isLiffReady, setIsLiffReady] = useState(false)
     const [rating, setRating] = useState<number | null>(null)
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
     const [featureRequest, setFeatureRequest] = useState('')
     const [message, setMessage] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    // Initialize LIFF and get user ID
+    useEffect(() => {
+        const initLiff = async () => {
+            try {
+                await liff.init({ liffId: LIFF_ID })
+                setIsLiffReady(true)
+
+                if (liff.isLoggedIn()) {
+                    const profile = await liff.getProfile()
+                    setUserId(profile.userId)
+                    console.log('LINE User ID:', profile.userId)
+                } else {
+                    // If not logged in, try to login
+                    liff.login()
+                }
+            } catch (err) {
+                console.error('LIFF initialization failed:', err)
+                // Fallback to URL param or anonymous
+                const urlUserId = new URLSearchParams(window.location.search).get('userId')
+                if (urlUserId) {
+                    setUserId(urlUserId)
+                }
+                setIsLiffReady(true)
+            }
+        }
+
+        initLiff()
+    }, [])
 
     const toggleFeature = (code: string) => {
         setSelectedFeatures((prev) =>
@@ -49,13 +82,15 @@ export default function ReviewForm() {
         setIsSubmitting(true)
 
         const payload = {
-            user_id: new URLSearchParams(window.location.search).get('userId') || 'anonymous',
+            user_id: userId,
             rating,
             most_used_features: selectedFeatures,
             feature_request: featureRequest.trim() || null,
             message: message.trim() || null,
             source: 'web_form'
         }
+
+        console.log('Submitting payload:', payload)
 
         try {
             const response = await fetch(WEBHOOK_URL, {
@@ -73,6 +108,18 @@ export default function ReviewForm() {
             setError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้งนะครับ')
             setIsSubmitting(false)
         }
+    }
+
+    // Show loading while LIFF initializes
+    if (!isLiffReady) {
+        return (
+            <div className="flex items-center justify-center min-h-dvh font-prompt">
+                <div className="text-center">
+                    <div className="animate-spin text-5xl mb-4">🐟</div>
+                    <p className="text-gray-600">กำลังโหลด...</p>
+                </div>
+            </div>
+        )
     }
 
     return (
