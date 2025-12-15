@@ -24,12 +24,12 @@ export default function ReviewForm() {
 
     // Feature list based on the image provided
     const features = [
-        { id: 'bp_record', label: 'บันทึกความดัน', icon: <Activity className="w-5 h-5" /> },
-        { id: 'app_record', label: 'บันทึกวันนัดหมอ', icon: <Calendar className="w-5 h-5" /> },
+        { id: 'bp_log', label: 'บันทึกความดัน', icon: <Activity className="w-5 h-5" /> },
+        { id: 'appointment_log', label: 'บันทึกวันนัดหมอ', icon: <Calendar className="w-5 h-5" /> },
         { id: 'bp_history', label: 'ดูประวัติความดันย้อนหลัง', icon: <History className="w-5 h-5" /> },
         { id: 'bp_dashboard', label: 'ดูแดชบอร์ดความดัน', icon: <BarChart2 className="w-5 h-5" /> },
-        { id: 'share_dashboard', label: 'แชร์แดชบอร์ดความดัน', icon: <Share2 className="w-5 h-5" /> },
-        { id: 'app_list', label: 'ดูรายการนัดหมาย', icon: <ClipboardList className="w-5 h-5" /> },
+        { id: 'bp_dashboard_share', label: 'แชร์แดชบอร์ดความดัน', icon: <Share2 className="w-5 h-5" /> },
+        { id: 'appointment_list', label: 'ดูรายการนัดหมาย', icon: <ClipboardList className="w-5 h-5" /> },
     ];
 
     // Initialize LIFF
