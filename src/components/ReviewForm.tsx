@@ -1,309 +1,283 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import liff from '@line/liff'
-import NurseLogo from '../assets/Nurse.png'
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Star, Activity, Calendar, History, BarChart2, Share2, ClipboardList, Send } from 'lucide-react';
+import liff from '@line/liff';
+import NurseLogo from '../assets/Nurse.png';
 
-const WEBHOOK_URL = 'https://n8n.srv1159869.hstgr.cloud/webhook/review-submit'
-const LIFF_ID = '2008692184-BtsHKjM8'
-
-interface FeatureOption {
-    code: string
-    label: string
-}
-
-const FEATURES: FeatureOption[] = [
-    { code: 'bp_log', label: 'บันทึกความดัน' },
-    { code: 'appointment_log', label: 'บันทึกวันนัดหมอ' },
-    { code: 'bp_history', label: 'ดูประวัติความดันย้อนหลัง' },
-    { code: 'bp_dashboard', label: 'ดูแดชบอร์ดความดัน' },
-    { code: 'bp_dashboard_share', label: 'แชร์แดชบอร์ดความดัน' },
-    { code: 'appointment_list', label: 'ดูรายการนัดหมาย' },
-    { code: 'interested_not_active', label: 'ยังไม่ได้ใช้บ่อย แต่สนใจ' },
-]
+const WEBHOOK_URL = 'https://n8n.srv1159869.hstgr.cloud/webhook/review-submit';
+const LIFF_ID = '2008692184-BtsHKjM8';
 
 export default function ReviewForm() {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
-    const [userId, setUserId] = useState<string>('anonymous')
-    const [isLiffReady, setIsLiffReady] = useState(false)
-    const [rating, setRating] = useState<number | null>(null)
-    const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
-    const [featureRequest, setFeatureRequest] = useState('')
-    const [message, setMessage] = useState('')
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    // Logic State
+    const [userId, setUserId] = useState<string>('anonymous');
+    const [isLiffReady, setIsLiffReady] = useState(false);
 
-    // Initialize LIFF and get user ID
+    // UI State
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+    const [feedback, setFeedback] = useState(''); // Request Feature
+    const [improvement, setImprovement] = useState(''); // Improvement
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Feature list based on the image provided
+    const features = [
+        { id: 'bp_record', label: 'บันทึกความดัน', icon: <Activity className="w-5 h-5" /> },
+        { id: 'app_record', label: 'บันทึกวันนัดหมอ', icon: <Calendar className="w-5 h-5" /> },
+        { id: 'bp_history', label: 'ดูประวัติความดันย้อนหลัง', icon: <History className="w-5 h-5" /> },
+        { id: 'bp_dashboard', label: 'ดูแดชบอร์ดความดัน', icon: <BarChart2 className="w-5 h-5" /> },
+        { id: 'share_dashboard', label: 'แชร์แดชบอร์ดความดัน', icon: <Share2 className="w-5 h-5" /> },
+        { id: 'app_list', label: 'ดูรายการนัดหมาย', icon: <ClipboardList className="w-5 h-5" /> },
+    ];
+
+    // Initialize LIFF
     useEffect(() => {
         const initLiff = async () => {
             try {
-                // Check if running in LIFF browser to avoid errors in normal browser
                 if (liff.isInClient()) {
-                    await liff.init({ liffId: LIFF_ID })
-                    setIsLiffReady(true)
-
+                    await liff.init({ liffId: LIFF_ID });
+                    setIsLiffReady(true);
                     if (liff.isLoggedIn()) {
-                        const profile = await liff.getProfile()
-                        setUserId(profile.userId)
+                        const profile = await liff.getProfile();
+                        setUserId(profile.userId);
                     } else {
-                        liff.login()
+                        liff.login();
                     }
                 } else {
-                    // Fallback for non-LIFF environment (dev/desktop browser)
-                    await liff.init({ liffId: LIFF_ID })
-                    setIsLiffReady(true)
+                    // Fallback for browser
+                    await liff.init({ liffId: LIFF_ID });
+                    setIsLiffReady(true);
                     if (liff.isLoggedIn()) {
-                        const profile = await liff.getProfile()
-                        setUserId(profile.userId)
+                        const profile = await liff.getProfile();
+                        setUserId(profile.userId);
                     }
                 }
-
             } catch (err) {
-                console.error('LIFF initialization failed:', err)
-                const urlUserId = new URLSearchParams(window.location.search).get('userId')
-                if (urlUserId) {
-                    setUserId(urlUserId)
-                }
-                setIsLiffReady(true)
+                console.error('LIFF Error:', err);
+                const urlUserId = new URLSearchParams(window.location.search).get('userId');
+                if (urlUserId) setUserId(urlUserId);
+                setIsLiffReady(true);
             }
-        }
+        };
+        initLiff();
+    }, []);
 
-        initLiff()
-    }, [])
-
-    const toggleFeature = (code: string) => {
+    const toggleFeature = (id: string) => {
         setSelectedFeatures((prev) =>
-            prev.includes(code) ? prev.filter((f) => f !== code) : [...prev, code]
-        )
-        setError(null)
-    }
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+        );
+    };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError(null)
-
-        if (!rating) {
-            alert("กรุณาให้คะแนนความรู้สึกโดยรวมก่อนนะครับ")
-            return
+    const handleSubmit = async () => {
+        if (rating === 0) {
+            alert("กรุณาให้คะแนนความรู้สึกโดยรวมก่อนนะครับ");
+            return;
         }
 
-        setIsSubmitting(true)
+        setIsSubmitting(true);
 
         const payload = {
             user_id: userId,
             rating,
             most_used_features: selectedFeatures,
-            feature_request: featureRequest.trim() || null,
-            message: message.trim() || null,
+            feature_request: feedback.trim() || null,
+            message: improvement.trim() || null,
             source: 'web_form'
-        }
+        };
 
         try {
             const response = await fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
-            })
+            });
 
-            if (!response.ok) {
-                throw new Error('Submission failed')
-            }
+            if (!response.ok) throw new Error('Submission failed');
 
-            navigate('/thank-you')
-        } catch {
-            setError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้งนะครับ')
-            setIsSubmitting(false)
+            navigate('/thank-you');
+        } catch (error) {
+            alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+            setIsSubmitting(false);
         }
-    }
+    };
 
     if (!isLiffReady) {
         return (
-            <div className="flex items-center justify-center min-h-dvh font-prompt">
-                <div className="text-center">
-                    <div className="animate-spin text-4xl mb-3">🐟</div>
-                    <p className="text-gray-600 text-sm">กำลังโหลด...</p>
-                </div>
+            <div className="flex items-center justify-center min-h-screen font-kanit">
+                <div className="animate-spin text-4xl text-orange-400">⌛</div>
             </div>
-        )
+        );
     }
 
     return (
-        <div className="flex items-center justify-center p-3 md:p-6 py-8 md:py-16 min-h-dvh relative overflow-x-hidden font-prompt">
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 font-kanit flex items-center justify-center p-4">
+            {/* Import Thai Font */}
+            <style>
+                {`
+          @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+          .font-kanit { font-family: 'Kanit', sans-serif; }
+        `}
+            </style>
 
-            {/* Background Animation Layer */}
-            <div className="ocean fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[15%] left-[-10%] w-20 md:w-28 animate-swim opacity-40">
-                    <svg viewBox="0 0 512 512" fill="#FDBA74" className="w-full h-full">
-                        <path d="M485.4 189.6c-27.4-23.7-65.7-22.1-79-20.7-5.5-29.6-18.7-56.7-39.7-77.9-20.6-20.8-47.5-35.8-77.1-43-30.8-7.5-62.7-4.1-92.6 9.8-19.9 9.3-37.5 22.8-51.5 39.5-13.7-6.8-28.7-10.8-44.5-10.8-49.3 0-90.9 36.3-98.3 83.6-1.5 9.6-2.3 19.5-2.3 29.5 0 29.5 6.9 57.3 19.1 82.2-20.1 27.6-17.7 66.8 6.7 91.5 22.1 22.3 57.4 24.6 82.4 6.7 15.6 19.9 36.2 35.8 59.9 45.4 31 12.6 64.9 14.7 97.4 6.1 32.2-8.5 61.2-26.7 82.9-52 4.1-4.8 7.8-9.9 11-15.2 24.1 6.6 68.7 13.7 97.1-13.5 33.6-32.2 38.6-86.8 45-128.7 1.1-7.4-8.8-12-15.5-7.9-10.7 6.5-24.1 12.8-39.6 17.1 2.3-17 5.2-31.9 8.2-44.4 3.7-15.5 4.3-31.2 1.3-46.6-2.2-11.4-15.9-15.5-23.3-9.1z" />
-                    </svg>
+            <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-orange-100 relative mb-10">
+                {/* Decorative Top Background */}
+                <div className="h-32 bg-orange-400 relative overflow-hidden">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-300 rounded-full opacity-50 blur-xl"></div>
+                    <div className="absolute top-10 -left-10 w-32 h-32 bg-yellow-300 rounded-full opacity-40 blur-xl"></div>
                 </div>
-                {/* Floating Bubbles */}
-                <div className="absolute w-3 h-3 md:w-4 md:h-4 left-[10%] bottom-0 animate-bubble bg-orange-200/50 rounded-full" style={{ animationDelay: '0s' }}></div>
-                <div className="absolute w-4 h-4 md:w-6 md:h-6 left-[50%] bottom-0 animate-bubble bg-orange-100/50 rounded-full" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute w-2 h-2 md:w-3 md:h-3 left-[90%] bottom-0 animate-bubble bg-orange-300/30 rounded-full" style={{ animationDelay: '4s' }}></div>
-            </div>
 
-            {/* Main Form Container */}
-            <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8 }}
-                className="relative w-full max-w-2xl z-10"
-            >
-                <div className="glass p-6 md:p-16 w-full">
-
-                    {/* ==================== HEADER SECTION ==================== */}
-
-                    {/* Fish Logo */}
-                    <div className="flex justify-center mb-6 md:mb-12">
-                        <div className="w-24 h-24 md:w-36 md:h-36 bg-white/60 backdrop-blur-md rounded-full flex items-center justify-center border-[3px] md:border-4 border-white shadow-xl overflow-hidden p-3 md:p-4 animate-wiggle">
+                {/* Mascot Avatar Container - Floating over header */}
+                <div className="absolute top-16 left-1/2 transform -translate-x-1/2">
+                    <div className="w-28 h-28 bg-white rounded-full p-2 shadow-lg flex items-center justify-center relative z-10 transition-transform hover:scale-105 duration-300">
+                        <div className="w-full h-full bg-orange-50 rounded-full flex items-center justify-center overflow-hidden p-3">
+                            {/* Replaced SVG with NurseLogo */}
                             <img src={NurseLogo} alt="Nurse Logo" className="w-full h-full object-contain" />
                         </div>
                     </div>
+                </div>
 
-                    {/* Header Title */}
-                    <div className="text-center mb-8 md:mb-16">
-                        <h1 className="text-xl md:text-3xl font-bold text-gray-800 leading-relaxed drop-shadow-sm">
-                            ปลาท๊องงอยากฟัง<br />ความรู้สึกของคุณฮะ
-                        </h1>
+                {/* Content Container */}
+                <div className="pt-16 pb-8 px-6 text-center">
+
+                    {/* Header Text */}
+                    <h1 className="text-2xl font-semibold text-gray-800 mb-1">
+                        ปลาท๊องงอยากฟัง
+                    </h1>
+                    <p className="text-gray-600 text-lg mb-6">
+                        ความรู้สึกของคุณฮะ
+                    </p>
+
+                    {/* Rating Section */}
+                    <div className="mb-8 p-6 bg-orange-50/50 rounded-2xl border border-orange-100">
+                        <h2 className="text-gray-700 font-medium mb-3">ความรู้สึกโดยรวม</h2>
+                        <div className="flex justify-center gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    onClick={() => setRating(star)}
+                                    onMouseEnter={() => setHoverRating(star)}
+                                    onMouseLeave={() => setHoverRating(0)}
+                                    className="transition-transform transform hover:scale-110 focus:outline-none"
+                                >
+                                    <Star
+                                        className={`w-10 h-10 ${star <= (hoverRating || rating)
+                                            ? 'fill-orange-400 text-orange-400 drop-shadow-sm'
+                                            : 'text-gray-300'
+                                            } transition-colors duration-200`}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-sm text-orange-400 mt-2 font-medium h-5">
+                            {rating === 5 ? 'ยอดเยี่ยมเลย! 🎉' : rating === 4 ? 'ดีมากครับ 😊' : rating > 0 ? 'ขอบคุณครับ 🙏' : ''}
+                        </p>
                     </div>
 
-                    {/* Divider */}
-                    <div className="w-full h-px bg-gradient-to-r from-transparent via-orange-300 to-transparent mb-10 md:mb-20"></div>
+                    {/* Features Selection */}
+                    <div className="mb-8">
+                        <h3 className="text-left text-gray-800 font-semibold mb-1">ฟีเจอร์ที่ใช้บ่อยที่สุด</h3>
+                        <p className="text-left text-gray-400 text-sm mb-4">(เลือกได้หลายข้อ)</p>
 
-                    {/* ==================== FORM SECTIONS ==================== */}
-                    <form onSubmit={handleSubmit}>
-
-                        {/* ========== Section 1: Overall Rating ========== */}
-                        <div className="mb-16 md:mb-32">
-                            <div className="bg-white/50 rounded-3xl p-6 md:p-12 border border-white/50 shadow-sm">
-
-                                <label className="block text-lg md:text-xl font-bold text-gray-800 mb-6 md:mb-10 text-center md:text-left">
-                                    ความรู้สึกโดยรวม
-                                </label>
-
-                                <div className="flex justify-center py-2 md:py-6">
-                                    <div className="flex gap-3 md:gap-8 text-4xl md:text-6xl">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <button
-                                                key={star}
-                                                type="button"
-                                                onClick={() => setRating(star)}
-                                                className={`transition-all duration-300 hover:scale-125 focus:outline-none p-1 md:p-3 ${rating && rating >= star
-                                                        ? 'text-orange-500 drop-shadow-lg scale-110'
-                                                        : 'text-gray-300 hover:text-orange-200'
-                                                    }`}
-                                            >
-                                                ★
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        {/* ========== Section 2: Most Used Features ========== */}
-                        <div className="mb-16 md:mb-32">
-
-                            <label className="block text-lg md:text-xl font-bold text-gray-800 mb-6 md:mb-10">
-                                ฟีเจอร์ที่ใช้บ่อยที่สุด <span className="text-sm md:text-base font-normal text-gray-500 block md:inline md:ml-2 mt-1 md:mt-0">(เลือกได้หลายข้อ)</span>
-                            </label>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5">
-                                {FEATURES.map((feature) => (
-                                    <label
-                                        key={feature.code}
-                                        className={`cursor-pointer relative group ${feature.code === 'interested_not_active' ? 'col-span-1 md:col-span-2' : ''}`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedFeatures.includes(feature.code)}
-                                            onChange={() => toggleFeature(feature.code)}
-                                            className="absolute opacity-0 w-0 h-0"
-                                        />
-                                        <div className="glass-card p-3 md:p-5 rounded-xl md:rounded-2xl text-center text-sm md:text-base min-h-[50px] md:min-h-[64px] flex items-center justify-center text-gray-700 transition-all hover:shadow-md border border-white/40">
-                                            {feature.label}
-                                        </div>
-                                    </label>
-                                ))}
-                            </div>
-
-                        </div>
-
-                        {/* ========== Section 3: Feature Request ========== */}
-                        <div className="mb-16 md:mb-32">
-
-                            <label htmlFor="feature_request" className="block text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-8">
-                                อยากให้เพิ่มอะไรไหมครับ?
-                            </label>
-
-                            <textarea
-                                id="feature_request"
-                                value={featureRequest}
-                                onChange={(e) => setFeatureRequest(e.target.value)}
-                                rows={4}
-                                className="glass-input w-full rounded-2xl p-4 md:p-6 text-gray-700 resize-none text-sm md:text-base leading-relaxed"
-                                placeholder="มีฟีเจอร์อะไรที่อยากให้เพิ่มบอกได้เลย..."
-                            />
-
-                        </div>
-
-                        {/* ========== Section 4: Improvement Suggestions ========== */}
-                        <div className="mb-16 md:mb-32">
-
-                            <label htmlFor="message" className="block text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-8">
-                                สิ่งที่อยากให้ปรับปรุง
-                            </label>
-
-                            <textarea
-                                id="message"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                rows={5}
-                                className="glass-input w-full rounded-2xl p-4 md:p-6 text-gray-700 resize-none text-sm md:text-base leading-relaxed"
-                                placeholder="ตรงไหนที่ใช้งานยาก หรืออยากให้ปรับปรุงบอกได้เลยครับ..."
-                            />
-
-                        </div>
-
-                        {/* ========== Error Message ========== */}
-                        <AnimatePresence>
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className="bg-red-50 text-red-600 px-4 py-3 md:px-8 md:py-5 rounded-2xl text-center text-sm md:text-base font-medium border border-red-100 shadow-sm mb-8 md:mb-12"
+                        <div className="grid grid-cols-1 gap-3">
+                            {features.map((feature) => (
+                                <button
+                                    key={feature.id}
+                                    type="button"
+                                    onClick={() => toggleFeature(feature.id)}
+                                    className={`flex items-center p-3 rounded-xl border transition-all duration-200 group ${selectedFeatures.includes(feature.id)
+                                        ? 'bg-orange-50 border-orange-400 shadow-sm'
+                                        : 'bg-white border-gray-100 hover:border-orange-200 hover:bg-orange-50/30'
+                                        }`}
                                 >
-                                    {error}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                    <div className={`p-2 rounded-lg mr-3 transition-colors ${selectedFeatures.includes(feature.id) ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400 group-hover:bg-orange-50 group-hover:text-orange-400'
+                                        }`}>
+                                        {feature.icon}
+                                    </div>
+                                    <span className={`text-md font-medium ${selectedFeatures.includes(feature.id) ? 'text-orange-800' : 'text-gray-600'
+                                        }`}>
+                                        {feature.label}
+                                    </span>
+                                    {selectedFeatures.includes(feature.id) && (
+                                        <div className="ml-auto w-4 h-4 rounded-full bg-orange-400"></div>
+                                    )}
+                                </button>
+                            ))}
 
-                        {/* ========== Submit Button ========== */}
-                        <div className="pt-4 md:pt-8">
+                            {/* "Interested but haven't used" Option */}
                             <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 md:py-6 px-6 md:px-10 rounded-2xl shadow-lg hover:shadow-xl hover:translate-y-[-2px] transform transition-all duration-200 flex items-center justify-center gap-3 text-lg md:text-xl disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                                type="button"
+                                onClick={() => toggleFeature('interested_not_active')}
+                                className={`mt-2 w-full py-3 px-4 rounded-xl border border-dashed transition-all ${selectedFeatures.includes('interested_not_active')
+                                    ? 'border-orange-400 bg-orange-50 text-orange-700'
+                                    : 'border-gray-300 text-gray-500 hover:border-orange-300 hover:text-orange-500'
+                                    }`}
                             >
-                                {isSubmitting ? (
-                                    <span>กำลังส่งข้อมูล...</span>
-                                ) : (
-                                    <span>ส่งข้อมูลให้น้องปลา</span>
-                                )}
+                                ยังไม่ได้ใช้บ่อย แต่สนใจ
                             </button>
-
-                            <p className="text-center text-gray-400 text-xs md:text-sm mt-6 md:mt-10">
-                                ปลาท๊องงจะว่ายไปอ่านทุกข้อความเลยฮะ
-                            </p>
                         </div>
+                    </div>
 
-                    </form>
+                    {/* Improvement Section */}
+                    <div className="mb-6 text-left">
+                        <label className="block text-gray-800 font-semibold mb-3">
+                            สิ่งที่อยากให้ปรับปรุง
+                        </label>
+                        <div className="relative">
+                            <textarea
+                                value={improvement}
+                                onChange={(e) => setImprovement(e.target.value)}
+                                placeholder="มีส่วนไหนที่ใช้งานยาก หรือเจอ Bug บอกเราได้เลย..."
+                                className="w-full p-4 h-24 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all resize-none text-gray-700 placeholder-gray-400 shadow-inner"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Feedback Text Area */}
+                    <div className="mb-8 text-left">
+                        <label className="block text-gray-800 font-semibold mb-3">
+                            อยากให้เพิ่มอะไรไหมครับ?
+                        </label>
+                        <div className="relative">
+                            <textarea
+                                value={feedback}
+                                onChange={(e) => setFeedback(e.target.value)}
+                                placeholder="มีฟีเจอร์อะไรที่อยากให้เพิ่มบอกได้เลย..."
+                                className="w-full p-4 h-24 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all resize-none text-gray-700 placeholder-gray-400 shadow-inner"
+                            />
+                            <div className="absolute bottom-3 right-3 text-gray-400 text-xs">
+                                {feedback.length}/500
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                        className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95 ${isSubmitting
+                            ? 'bg-orange-300 text-white cursor-wait'
+                            : 'bg-gradient-to-r from-orange-400 to-orange-500 text-white hover:shadow-orange-200'
+                            }`}
+                    >
+                        {isSubmitting ? (
+                            <span>กำลังส่งข้อมูล...</span>
+                        ) : (
+                            <>
+                                <span>ส่งความคิดเห็น</span>
+                                <Send className="w-5 h-5" />
+                            </>
+                        )}
+                    </button>
+
                 </div>
-            </motion.div>
+            </div>
+
+            {/* Footer Credit */}
+            <div className="fixed bottom-2 text-orange-800/20 text-xs font-kanit">
+                Platong Review
+            </div>
         </div>
-    )
+    );
 }

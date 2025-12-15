@@ -1,125 +1,115 @@
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import DoctorLogo from '../assets/Doctor.png'
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { CheckCircle, Facebook, Globe } from 'lucide-react';
+import DoctorLogo from '../assets/Doctor.png';
 
-const FACEBOOK_URL = 'https://www.facebook.com/profile.php?id=61584036074074'
-const WEBSITE_URL = 'https://home-bp-guide.vercel.app/'
+const FACEBOOK_URL = 'https://www.facebook.com/profile.php?id=61584036074074';
+const WEBSITE_URL = 'https://home-bp-guide.vercel.app/';
 
-// Confetti particle component
+// Simple confetti particle
 const ConfettiParticle = ({ delay, x, color }: { delay: number; x: number; color: string }) => (
     <motion.div
         initial={{ y: -20, x: x, opacity: 1, scale: 1, rotate: 0 }}
         animate={{
-            y: [0, 400, 600],
-            x: [x, x + (Math.random() - 0.5) * 100, x + (Math.random() - 0.5) * 150],
-            opacity: [1, 1, 0],
-            rotate: [0, 360, 720],
-            scale: [1, 1.2, 0.8],
+            y: [0, 400],
+            x: [x, x + (Math.random() - 0.5) * 100],
+            opacity: [1, 0],
+            rotate: [0, 360],
         }}
-        transition={{
-            duration: 3,
-            delay: delay,
-            ease: 'easeOut',
-        }}
+        transition={{ duration: 3, delay: delay, ease: 'easeOut' }}
         className="absolute top-0 pointer-events-none"
-        style={{ left: `${x}%` }}
     >
-        <div
-            className="w-2 h-2 md:w-3 md:h-3 rounded-sm"
-            style={{ backgroundColor: color }}
-        />
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
     </motion.div>
-)
-
-// Celebration burst animation
-const CelebrationBurst = () => {
-    const particles = Array.from({ length: 30 }, (_, i) => ({
-        id: i,
-        delay: Math.random() * 0.5,
-        x: Math.random() * 100,
-        color: ['#F97316', '#FBBF24', '#34D399', '#60A5FA', '#F472B6', '#A78BFA'][Math.floor(Math.random() * 6)],
-    }))
-
-    return (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
-            {particles.map((p) => (
-                <ConfettiParticle key={p.id} delay={p.delay} x={p.x} color={p.color} />
-            ))}
-        </div>
-    )
-}
+);
 
 export default function ThankYou() {
-    const [showCelebration, setShowCelebration] = useState(true)
+    const [showConfetti, setShowConfetti] = useState(true);
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowCelebration(false), 3500)
-        return () => clearTimeout(timer)
-    }, [])
+        const timer = setTimeout(() => setShowConfetti(false), 3000);
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
-        <div className="flex items-center justify-center p-4 py-8 md:py-12 min-h-dvh relative overflow-hidden font-prompt">
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 font-kanit flex items-center justify-center p-4 overflow-hidden relative">
 
-            {/* Celebration Animation */}
-            {showCelebration && <CelebrationBurst />}
-
-            {/* Background Animation Layer */}
-            <div className="ocean fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[15%] left-[-10%] w-20 md:w-28 animate-swim opacity-40">
-                    <svg viewBox="0 0 512 512" fill="#FDBA74" className="w-full h-full">
-                        <path d="M485.4 189.6c-27.4-23.7-65.7-22.1-79-20.7-5.5-29.6-18.7-56.7-39.7-77.9-20.6-20.8-47.5-35.8-77.1-43-30.8-7.5-62.7-4.1-92.6 9.8-19.9 9.3-37.5 22.8-51.5 39.5-13.7-6.8-28.7-10.8-44.5-10.8-49.3 0-90.9 36.3-98.3 83.6-1.5 9.6-2.3 19.5-2.3 29.5 0 29.5 6.9 57.3 19.1 82.2-20.1 27.6-17.7 66.8 6.7 91.5 22.1 22.3 57.4 24.6 82.4 6.7 15.6 19.9 36.2 35.8 59.9 45.4 31 12.6 64.9 14.7 97.4 6.1 32.2-8.5 61.2-26.7 82.9-52 4.1-4.8 7.8-9.9 11-15.2 24.1 6.6 68.7 13.7 97.1-13.5 33.6-32.2 38.6-86.8 45-128.7 1.1-7.4-8.8-12-15.5-7.9-10.7 6.5-24.1 12.8-39.6 17.1 2.3-17 5.2-31.9 8.2-44.4 3.7-15.5 4.3-31.2 1.3-46.6-2.2-11.4-15.9-15.5-23.3-9.1z" />
-                    </svg>
+            {/* Confetti */}
+            {showConfetti && (
+                <div className="absolute inset-0 pointer-events-none">
+                    {Array.from({ length: 30 }).map((_, i) => (
+                        <ConfettiParticle
+                            key={i}
+                            delay={Math.random() * 0.5}
+                            x={Math.random() * 100} // percentage
+                            color={['#F97316', '#FBBF24', '#34D399', '#60A5FA'][i % 4]}
+                        />
+                    ))}
                 </div>
-                <div className="absolute w-3 h-3 md:w-4 md:h-4 left-[10%] bottom-0 animate-bubble bg-orange-200/50 rounded-full" style={{ animationDelay: '0s' }}></div>
-                <div className="absolute w-4 h-4 md:w-6 md:h-6 left-[50%] bottom-0 animate-bubble bg-orange-100/50 rounded-full" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute w-2 h-2 md:w-3 md:h-3 left-[90%] bottom-0 animate-bubble bg-orange-300/30 rounded-full" style={{ animationDelay: '4s' }}></div>
-            </div>
+            )}
 
             <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, type: 'spring' }}
-                className="glass p-8 md:p-20 w-full max-w-2xl z-10 text-center"
+                transition={{ type: "spring", duration: 0.6 }}
+                className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-orange-100 p-8 text-center"
             >
-                {/* Doctor Logo - Centered */}
-                <div className="flex justify-center mb-10 md:mb-20">
-                    <div className="relative w-32 h-32 md:w-56 md:h-56">
-                        <div className="absolute inset-0 bg-white/40 rounded-full blur-xl animate-pulse"></div>
-                        <div className="absolute inset-0 flex items-center justify-center z-10 animate-heartbeat">
-                            <img src={DoctorLogo} alt="Doctor Logo" className="w-full h-full object-contain drop-shadow-xl" />
-                        </div>
+                {/* Initial Success Icon */}
+                <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: "spring" }}
+                    className="flex justify-center mb-6"
+                >
+                    <div className="bg-green-100 p-4 rounded-full">
+                        <CheckCircle className="w-12 h-12 text-green-500" />
                     </div>
+                </motion.div>
+
+                {/* Doctor Mascot */}
+                <div className="relative w-40 h-40 mx-auto mb-6">
+                    <div className="absolute inset-0 bg-orange-100 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                    <img
+                        src={DoctorLogo}
+                        alt="Doctor Logo"
+                        className="w-full h-full object-contain relative z-10 drop-shadow-md"
+                    />
                 </div>
 
-                {/* Title */}
-                <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6 text-gray-800 drop-shadow-sm">ขอบคุณจากใจเลยฮะ</h2>
-
-                {/* Message */}
-                <p className="text-gray-600 text-base md:text-xl leading-relaxed font-light mb-12 md:mb-28">
-                    พี่ปลาท๊องงสัญญาว่าจะตั้งใจว่ายน้ำ<br />
-                    เพื่อดูแลความดันของคุณตลอดไปเลย
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">ขอบคุณจากใจเลยฮะ</h2>
+                <p className="text-gray-600 mb-10 text-lg leading-relaxed">
+                    พี่ปลาท๊องงได้รับข้อมูลแล้ว<br />
+                    จะรีบนำไปปรับปรุงให้ดีที่สุดเลยครับ!
                 </p>
 
-                {/* Social Links - Blue for Facebook, Orange for Website */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                {/* Social Buttons */}
+                <div className="grid grid-cols-2 gap-4">
                     <a
                         href={FACEBOOK_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 md:gap-3 p-4 md:p-6 bg-blue-500 hover:bg-blue-600 rounded-2xl text-white border border-blue-400 transition-all hover:scale-105 shadow-lg hover:shadow-xl"
+                        className="flex flex-col items-center justify-center p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors group"
                     >
-                        <span className="font-semibold text-base md:text-lg">Facebook</span>
+                        <Facebook className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium text-sm">Facebook</span>
                     </a>
                     <a
                         href={WEBSITE_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 md:gap-3 p-4 md:p-6 bg-orange-500 hover:bg-orange-600 rounded-2xl text-white border border-orange-400 transition-all hover:scale-105 shadow-lg hover:shadow-xl"
+                        className="flex flex-col items-center justify-center p-4 rounded-2xl bg-orange-50 hover:bg-orange-100 text-orange-600 transition-colors group"
                     >
-                        <span className="font-semibold text-base md:text-lg">Website</span>
+                        <Globe className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium text-sm">Website</span>
                     </a>
                 </div>
+
             </motion.div>
+
+            {/* Footer */}
+            <div className="fixed bottom-2 text-orange-800/20 text-xs font-kanit">
+                Platong Review
+            </div>
         </div>
-    )
+    );
 }
