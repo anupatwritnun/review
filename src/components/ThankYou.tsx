@@ -25,7 +25,7 @@ const ConfettiParticle = ({ delay, x, color }: { delay: number; x: number; color
         style={{ left: `${x}%` }}
     >
         <div
-            className="w-3 h-3 rounded-sm"
+            className="w-2 h-2 md:w-3 md:h-3 rounded-sm"
             style={{ backgroundColor: color }}
         />
     </motion.div>
@@ -58,32 +58,32 @@ export default function ThankYou() {
     }, [])
 
     return (
-        <div className="flex items-center justify-center p-4 py-12 min-h-dvh relative overflow-hidden font-prompt">
+        <div className="flex items-center justify-center p-4 py-8 md:py-12 min-h-dvh relative overflow-hidden font-prompt">
 
             {/* Celebration Animation */}
             {showCelebration && <CelebrationBurst />}
 
             {/* Background Animation Layer */}
             <div className="ocean fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[15%] left-[-10%] w-28 animate-swim opacity-40">
+                <div className="absolute top-[15%] left-[-10%] w-20 md:w-28 animate-swim opacity-40">
                     <svg viewBox="0 0 512 512" fill="#FDBA74" className="w-full h-full">
                         <path d="M485.4 189.6c-27.4-23.7-65.7-22.1-79-20.7-5.5-29.6-18.7-56.7-39.7-77.9-20.6-20.8-47.5-35.8-77.1-43-30.8-7.5-62.7-4.1-92.6 9.8-19.9 9.3-37.5 22.8-51.5 39.5-13.7-6.8-28.7-10.8-44.5-10.8-49.3 0-90.9 36.3-98.3 83.6-1.5 9.6-2.3 19.5-2.3 29.5 0 29.5 6.9 57.3 19.1 82.2-20.1 27.6-17.7 66.8 6.7 91.5 22.1 22.3 57.4 24.6 82.4 6.7 15.6 19.9 36.2 35.8 59.9 45.4 31 12.6 64.9 14.7 97.4 6.1 32.2-8.5 61.2-26.7 82.9-52 4.1-4.8 7.8-9.9 11-15.2 24.1 6.6 68.7 13.7 97.1-13.5 33.6-32.2 38.6-86.8 45-128.7 1.1-7.4-8.8-12-15.5-7.9-10.7 6.5-24.1 12.8-39.6 17.1 2.3-17 5.2-31.9 8.2-44.4 3.7-15.5 4.3-31.2 1.3-46.6-2.2-11.4-15.9-15.5-23.3-9.1z" />
                     </svg>
                 </div>
-                <div className="absolute w-4 h-4 left-[10%] bottom-0 animate-bubble bg-orange-200/50 rounded-full" style={{ animationDelay: '0s' }}></div>
-                <div className="absolute w-6 h-6 left-[50%] bottom-0 animate-bubble bg-orange-100/50 rounded-full" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute w-3 h-3 left-[90%] bottom-0 animate-bubble bg-orange-300/30 rounded-full" style={{ animationDelay: '4s' }}></div>
+                <div className="absolute w-3 h-3 md:w-4 md:h-4 left-[10%] bottom-0 animate-bubble bg-orange-200/50 rounded-full" style={{ animationDelay: '0s' }}></div>
+                <div className="absolute w-4 h-4 md:w-6 md:h-6 left-[50%] bottom-0 animate-bubble bg-orange-100/50 rounded-full" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute w-2 h-2 md:w-3 md:h-3 left-[90%] bottom-0 animate-bubble bg-orange-300/30 rounded-full" style={{ animationDelay: '4s' }}></div>
             </div>
 
             <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.5, type: 'spring' }}
-                className="glass p-12 md:p-20 w-full max-w-2xl z-10 text-center"
+                className="glass p-8 md:p-20 w-full max-w-2xl z-10 text-center"
             >
                 {/* Doctor Logo - Centered */}
-                <div className="flex justify-center mb-20">
-                    <div className="relative w-56 h-56">
+                <div className="flex justify-center mb-10 md:mb-20">
+                    <div className="relative w-32 h-32 md:w-56 md:h-56">
                         <div className="absolute inset-0 bg-white/40 rounded-full blur-xl animate-pulse"></div>
                         <div className="absolute inset-0 flex items-center justify-center z-10 animate-heartbeat">
                             <img src={DoctorLogo} alt="Doctor Logo" className="w-full h-full object-contain drop-shadow-xl" />
@@ -92,31 +92,31 @@ export default function ThankYou() {
                 </div>
 
                 {/* Title */}
-                <h2 className="text-4xl font-bold mb-6 text-gray-800 drop-shadow-sm">ขอบคุณจากใจเลยฮะ</h2>
+                <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6 text-gray-800 drop-shadow-sm">ขอบคุณจากใจเลยฮะ</h2>
 
-                {/* Message - Removed first line, single spacing */}
-                <p className="text-gray-600 text-xl leading-relaxed font-light mb-28">
+                {/* Message */}
+                <p className="text-gray-600 text-base md:text-xl leading-relaxed font-light mb-12 md:mb-28">
                     พี่ปลาท๊องงสัญญาว่าจะตั้งใจว่ายน้ำ<br />
                     เพื่อดูแลความดันของคุณตลอดไปเลย
                 </p>
 
                 {/* Social Links - Blue for Facebook, Orange for Website */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                     <a
                         href={FACEBOOK_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-3 p-6 bg-blue-500 hover:bg-blue-600 rounded-2xl text-white border border-blue-400 transition-all hover:scale-105 shadow-lg hover:shadow-xl"
+                        className="flex items-center justify-center gap-2 md:gap-3 p-4 md:p-6 bg-blue-500 hover:bg-blue-600 rounded-2xl text-white border border-blue-400 transition-all hover:scale-105 shadow-lg hover:shadow-xl"
                     >
-                        <span className="font-semibold text-lg">Facebook</span>
+                        <span className="font-semibold text-base md:text-lg">Facebook</span>
                     </a>
                     <a
                         href={WEBSITE_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-3 p-6 bg-orange-500 hover:bg-orange-600 rounded-2xl text-white border border-orange-400 transition-all hover:scale-105 shadow-lg hover:shadow-xl"
+                        className="flex items-center justify-center gap-2 md:gap-3 p-4 md:p-6 bg-orange-500 hover:bg-orange-600 rounded-2xl text-white border border-orange-400 transition-all hover:scale-105 shadow-lg hover:shadow-xl"
                     >
-                        <span className="font-semibold text-lg">Website</span>
+                        <span className="font-semibold text-base md:text-lg">Website</span>
                     </a>
                 </div>
             </motion.div>
